@@ -4,4 +4,4 @@ frontend/dist
 packages/*.deb
 packages/*.app
 packages/*.exe
-usr/local/bin/*
+**/usr/local/bin/*.*
