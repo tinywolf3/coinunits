@@ -1,0 +1,10 @@
+Package: coinunits
+Version: 1.0.0
+Architecture: amd64
+Depends: 
+Priority: optional
+Section: utils
+Maintainer: tinywolf <tinywolf@gmail.com>
+Homepage: 
+Description: 코인 단위 변환기
+

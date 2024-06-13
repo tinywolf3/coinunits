@@ -1,0 +1,20 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "coinunits",
+  "outputfilename": "coinunits",
+  "frontend:install": "npm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "info": {
+    "companyName": "tinywolf",
+    "productName": "코인 단위 변환기",
+    "productVersion": "1.0.0",
+    "copyright": "tinywolf@gmail.com",
+    "comments": ""
+  },
+  "author": {
+    "name": "tinywolf",
+    "email": "tinywolf@gmail.com"
+  }
+}

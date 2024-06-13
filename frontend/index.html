@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8"/>
+	<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+	<title>코인 단위 변환기</title>
+</head>
+<body>
+	<div id="app"></div>
+	<h2>코인 단위 변환기</h2>
+	<table>
+		<tr>
+			<td>코인 심볼</td>
+			<td>:</td>
+			<td>
+				<input class="input" id="symbol"
+					type="text" autocomplete="off" value="XPLA" size="6"
+					onclick="this.select()" onchange="changeSymbol()" />
+			</td>
+		</tr>
+		<tr>
+			<td>소수 자릿수</td>
+			<td>:</td>
+			<td>
+				<input class="input" id="decimals"
+					type="number" autocomplete="off" value="18" min="0" max="30"
+					onclick="this.select()" onchange="changeDecimals()" />
+				<button class="btn" onclick="setDecimals(0)">0</button>
+				<button class="btn" onclick="setDecimals(6)">6</button>
+				<button class="btn" onclick="setDecimals(18)">18</button>
+			</td>
+		</tr>
+		<tr>
+			<td>Real Amount</td>
+			<td>:</td>
+			<td>
+				<input class="number" id="amount" type="text" size="40"
+					onclick="this.select()" oninput="inputAmount()" onchange="changeAmount()" />
+				<span id="unit_amount">XPLA</span> &nbsp;&nbsp;
+			</td>
+			<td>
+				<button class="btn" onclick="copyAmount()">copy</button>
+			</td>
+		</tr>
+		<tr>
+			<td>Uint Amount</td>
+			<td>:</td>
+			<td>
+				<input class="number" id="uint" type="text" size="40"
+					onclick="this.select()" oninput="inputUint()" onchange="changeUint()" />
+				<span id="unit_uint">axpla</span>
+			</td>
+			<td>
+				<button class="btn" onclick="copyUint()">copy</button>
+			</td>
+		</tr>
+	</table>
+	<script src="./src/main.js" type="module"></script>
+</body>
+</html>
