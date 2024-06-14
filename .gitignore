@@ -1,7 +1,30 @@
+# wails
 build/bin
 node_modules
 frontend/dist
+
+# packaging
 packages/*.deb
 packages/*.app
 packages/*.exe
+packages/*.zip
+packages/*.tar.*
+packages/*.?z
+packages/*.t?z
+packages/*.t?z?
 **/usr/local/bin/*.*
+
+# macos
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+*.lnk

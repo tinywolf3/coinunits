@@ -22,13 +22,16 @@ func main() {
 	err := wails.Run(&options.App{
 		Title:  "코인 단위 변환기",
 		Width:  720,
-		Height: 300, // ubuntu: 256, mac: 220, windows: 300
+		Height: APP_OPTION_HEIGHT,
 		Linux: &linux.Options{
 			WindowIsTranslucent: true,
 			ProgramName:         "coinunits",
 		},
 		Mac: &mac.Options{
-			TitleBar:             mac.TitleBarHidden(),
+			TitleBar: &mac.TitleBar{
+				TitlebarAppearsTransparent: false,
+				HideTitle:                  true,
+			},
 			WebviewIsTransparent: true,
 			WindowIsTranslucent:  true,
 			About: &mac.AboutInfo{
