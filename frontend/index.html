@@ -54,6 +54,43 @@
 				<button class="btn" onclick="copyUint()">copy</button>
 			</td>
 		</tr>
+		<tr><td colspan="4"><hr/></td></tr>
+		<tr>
+			<td>Chain API URL</td>
+			<td>:</td>
+			<td>
+				<input class="input" id="rpc"
+					type="text" autocomplete="on" value="https://dimension-lcd.xpla.dev/" placeholder="Cosmos LCD or EVM RPC URL" size="44"
+					onclick="this.select()" onchange="resetRPC()" />
+			</td>
+			<td>
+				<button class="btn" onclick="checkRPC()">Check</button>
+			</td>
+		</tr>
+		<tr>
+			<td>Token Address</td>
+			<td>:</td>
+			<td>
+				<input class="input" id="token"
+					type="text" autocomplete="on" value="" placeholder="Native Token" size="44"
+					onclick="this.select()" />
+			</td>
+			<td>
+				<button class="btn" onclick="applyToken()">Apply</button>
+			</td>
+		</tr>
+		<tr>
+			<td>Account Address</td>
+			<td>:</td>
+			<td>
+				<input class="input" id="address"
+					type="text" autocomplete="on" value="" size="44"
+					onclick="this.select()" />
+			</td>
+			<td>
+				<button class="btn" style="font-size:0.8em;" onclick="getBalance()">Balance</button>
+			</td>
+		</tr>
 	</table>
 	<script src="./src/main.js" type="module"></script>
 </body>

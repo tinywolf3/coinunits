@@ -2,15 +2,14 @@ html {
 /*	background-color: rgba(27, 38, 54, 1);	*/
 	text-align: center;
 	color: white;
-	overflow: hidden;
 }
 
 body {
 	margin: 0;
 	color: white;
 	font-family: "Neo둥근모code", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
-	"Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-	sans-serif;
+		"Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+		sans-serif;
 }
 
 @font-face {
@@ -41,6 +40,7 @@ td {
 }
 
 input {
+	font-family: "D2Coding", monospace;
 	font-size: 1em;
 	font-variant-numeric: tabular-nums;
 	user-select: all;
@@ -57,7 +57,21 @@ input.number {
 	left: 50%;
 	transform: translate(-50%, -50%);
 
-	background-color: gray;
+	background-color: darkgreen;
+	color: white;
+
+	padding: 1em;
+	opacity: 1;
+}
+
+.errorBox {
+	z-index: 1000;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+
+	background-color: darkred;
 	color: white;
 
 	padding: 1em;

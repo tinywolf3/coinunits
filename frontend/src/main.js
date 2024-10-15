@@ -2,14 +2,16 @@ import { Decimal } from 'decimal.js';
 
 import './style.css';
 import './app.css';
+import { Buffer } from "buffer";
+window.Buffer = Buffer;
 
 import * as app from "../wailsjs/go/main/App.js";
 import * as runtime from "../wailsjs/runtime/runtime.js";
 
 function numberWithCommas(x) {
-    var parts = x.toString().split(".");
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    return parts.join(".");
+	var parts = x.toString().split(".");
+	parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+	return parts.join(".");
 }
 
 const symbolElement = document.getElementById("symbol");
@@ -18,22 +20,153 @@ const amountElement = document.getElementById("amount");
 const amountUnitElement = document.getElementById("unit_amount");
 const uintElement = document.getElementById("uint");
 const uintUnitElement = document.getElementById("unit_uint");
+const rpcElement = document.getElementById("rpc");
+const tokenElement = document.getElementById("token");
+const addrElement = document.getElementById("address");
+let nettype = null;
+let evm_chains = {};
 amountElement.focus();
+
+function evmBufferFromHex(hex /*string*/) /*Buffer*/ {
+	if (hex === undefined || hex === '0x' || hex === '0x0' || hex === '0x00') {
+		return Buffer.alloc(0);
+	}
+	if (hex.startsWith('0x')) {
+		hex = hex.substring(2);
+	}
+	if (hex.length % 2 == 1) {
+		hex = '0' + hex;
+	}
+	return Buffer.from(hex, 'hex');
+}
+
+function evmBufferToAddress(buffer /*Buffer*/) {
+	if (buffer.length < 20) throw new Error('Buffer length must be 20');
+	else if (buffer.length > 20)
+		buffer = buffer.slice(buffer.length - 20, buffer.length);
+	return eip55('0x' + buffer.toString('hex'));
+}
+
+function evmDataToParams(types /*string[]*/, data /*Buffer*/) /*any[]*/ {
+	const params = [];
+	let idx = 0;
+	for (const type of types) {
+		const buff = data.slice(idx, idx + 32);
+		try {
+			switch (type) {
+				case 'number':
+					{
+						const n = parseInt(buff.toString('hex'), 16);
+						params.push(n);
+					}
+					break;
+
+				case 'bignumber':
+					{
+						const bn = new Decimal('0x' + buff.toString('hex'));
+						params.push(bn);
+					}
+					break;
+
+				case 'address':
+					{
+						const addr = evmBufferToAddress(buff);
+						params.push(addr);
+					}
+					break;
+
+				case 'bool':
+					{
+						const n = parseInt(buff.toString('hex'), 16);
+						params.push(n != 0);
+					}
+					break;
+
+				case 'string':
+					{
+						const pos = parseInt(buff.toString('hex'), 16);
+						const len = parseInt(
+							data.slice(pos, pos + 32).toString('hex'),
+							16
+						);
+						const str = data.slice(pos + 32, pos + 32 + len).toString('utf8');
+						params.push(str);
+					}
+					break;
+
+				case 'bytes':
+					{
+						const pos = parseInt(buff.toString('hex'), 16);
+						const len = parseInt(
+							data.slice(pos, pos + 32).toString('hex'),
+							16
+						);
+						const buf = Buffer.from(data.slice(pos + 32, pos + 32 + len));
+						params.push(buf);
+					}
+					break;
+
+				default:
+					break;
+			}
+		} catch (e) {
+			let message = 'Unknown Error';
+			if (e instanceof Error) message = e.message;
+			idx /= 32;
+			throw new Error(
+				'Cannot parse params: ' + idx + ' type ' + type + '\n' + message
+			);
+		}
+		idx += 32;
+	}
+	return params;
+}
+
+
 
 window.onload = async () => {
 	const json = await app.LoadConf();
 	runtime.LogDebug(json);
-	const data = JSON.parse(json);
-	if (data?.symbol) {
-		symbolElement.value = data.symbol;
+	const conf = JSON.parse(json);
+	if (conf?.symbol) {
+		symbolElement.value = conf.symbol;
 	}
-	if (data?.decimals) {
-		decimalsElement.value = data.decimals;
+	if (conf?.decimals) {
+		decimalsElement.value = conf.decimals;
 	}
-	if (data?.amount) {
-		amountElement.value = data.amount;
+	if (conf?.amount) {
+		amountElement.value = conf.amount;
+	}
+	if (conf?.rpc) {
+		rpcElement.value = conf.rpc;
+	}
+	if (conf?.token) {
+		tokenElement.value = conf.token;
+	}
+	if (conf?.address) {
+		addrElement.value = conf.address;
 	}
 	window.changeSymbol();
+
+	const res = await fetch('https://chainid.network/chains_mini.json');
+	if (res.ok) {
+		const data = await res.json();
+		// console.debug(data);
+		if (Array.isArray(data)) {
+			for (const item of data) {
+				if (evm_chains.hasOwnProperty(item.chainId))
+					continue;
+				evm_chains[item.chainId] = item;
+			}
+		}
+	}
+
+	if (typeof rpcElement.value === 'string' && rpcElement.value.length > 0) {
+		await window.checkRPC();
+		if (typeof tokenElement.value === 'string' && tokenElement.value.length > 0) {
+			await window.applyToken();
+		}
+	}
 }
 
 runtime.EventsOn("onBeforeClose", async () => {
@@ -42,6 +175,9 @@ runtime.EventsOn("onBeforeClose", async () => {
 		symbol: symbolElement.value,
 		decimals: parseInt(decimalsElement.value),
 		amount: amountElement.value,
+		rpc: rpcElement.value,
+		token: tokenElement.value,
+		address: addrElement.value,
 	};
 	const json = JSON.stringify(conf, null, 2);
 	runtime.LogDebug(json);
@@ -51,7 +187,8 @@ runtime.EventsOn("onBeforeClose", async () => {
 
 window.changeSymbol = () => {
 	let symbol = symbolElement.value;
-	symbol = symbol.toUpperCase();
+	if (nettype !== 'evm')
+		symbol = symbol.toUpperCase();
 	symbolElement.value = symbol;
 	amountUnitElement.innerHTML = symbol;
 	window.changeDecimals();
@@ -65,7 +202,7 @@ window.setDecimals = (decimals) => {
 	let dec = 0;
 	try {
 		dec = parseInt(decimals);
-	} catch (e) {}
+	} catch (e) { }
 	decimalsElement.value = dec;
 	let symbol = symbolElement.value;
 	symbol = symbol.toLowerCase();
@@ -166,6 +303,7 @@ window.inputUint = () => {
 		return uint.toDecimalPlaces(0).toFixed();
 	}
 	amountElement.value = amount.toDecimalPlaces(decimals).toFixed();
+	window.changeAmount();
 	return uint.toDecimalPlaces(0).toFixed();
 }
 
@@ -188,7 +326,7 @@ function fadeDiv(id, step, interval) {
 		div.style.opacity = opacity + step;
 		setTimeout(() => fadeDiv(id, step, interval), interval);
 	}
- 	else if (step > 0 && opacity < 1) {
+	else if (step > 0 && opacity < 1) {
 		div.style.opacity = opacity + step;
 		setTimeout(() => fadeDiv(id, step, interval), interval);
 	}
@@ -221,4 +359,498 @@ window.copyAmount = () => {
 
 window.copyUint = () => {
 	copyToClipboard(uintElement.value + uintUnitElement.innerHTML);
+}
+
+window.resetRPC = () => {
+	nettype = null;
+}
+
+window.checkRPC = async () => {
+	let rpc = rpcElement.value;
+	if (typeof rpc !== 'string' || rpc.length < 1 || !rpc.startsWith('http')) {
+		document.querySelector('#app').innerHTML = `
+			<div id="messagebox" class="errorBox">
+				URL is not valid
+			</div>
+		`;
+		setTimeout(() => fadeoutDiv('messagebox'), 700);
+		return;
+	}
+	if (rpc.endsWith('/')) {
+		rpc = rpc.substring(0, rpc.length - 1);
+		rpcElement.value = rpc;
+	}
+
+	// check for cosmos status
+	let res = await fetch(`${rpc}/cosmos/base/tendermint/v1beta1/node_info`);
+	if (res.ok) {
+		const data = await res.json();
+		console.debug(data);
+		if (typeof data?.default_node_info?.network === 'string') {
+			document.querySelector('#app').innerHTML = `
+				<div id="messagebox" class="messageBox">
+					Cosmos LCD<br />
+					chain-id: ${data.default_node_info.network}
+				</div>
+			`;
+			setTimeout(() => fadeoutDiv('messagebox'), 2000);
+			nettype = 'cosmos';
+			return;
+		}
+	}
+
+	// check for evm
+	res = await fetch(rpc, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({
+			jsonrpc: '2.0',
+			method: 'eth_chainId',
+			params: [],
+			id: 0,
+		}),
+	});
+	if (res.ok) {
+		const data = await res.json();
+		console.debug(data);
+		if (typeof data?.result === 'string') {
+			try {
+				const chain = parseInt(data.result, 16);
+				if (chain in evm_chains) {
+					const item = evm_chains[chain];
+					document.querySelector('#app').innerHTML = `
+						<div id="messagebox" class="messageBox">
+							EVM RPC<br />
+							chain: [${chain}] ${item.name}
+						</div>
+					`;
+					setTimeout(() => fadeoutDiv('messagebox'), 2000);
+					nettype = 'evm';
+					return;
+				}
+			}
+			catch (e) {
+				console.error(e);
+			}
+		}
+	}
+
+	nettype = null;
+}
+
+window.applyToken = async () => {
+	if (nettype !== 'cosmos' && nettype !== 'evm') {
+		document.querySelector('#app').innerHTML = `
+			<div id="messagebox" class="errorBox">
+				API type is unknown.<br />
+				Please, 'Check' API URL first.
+			</div>
+		`;
+		setTimeout(() => fadeoutDiv('messagebox'), 2000);
+		return;
+	}
+	let rpc = rpcElement.value;
+
+	const token = tokenElement.value;
+
+	// native token
+	if (typeof token !== 'string' || token.length < 1) {
+		switch (nettype) {
+			// check for cosmos
+			case 'cosmos': {
+				const res = await fetch(`${rpc}/cosmos/staking/v1beta1/params`);
+				if (res.ok) {
+					const data = await res.json();
+					console.debug(data);
+					if (typeof data?.params?.bond_denom === 'string') {
+						const denom = data.params.bond_denom;
+						switch (denom[0]) {
+							case 'd':
+								decimalsElement.value = 1;
+								break;
+							case 'c':
+								decimalsElement.value = 2;
+								break;
+							case 'm':
+								decimalsElement.value = 3;
+								break;
+							case 'u':
+								decimalsElement.value = 6;
+								break;
+							case 'n':
+								decimalsElement.value = 9;
+								break;
+							case 'p':
+								decimalsElement.value = 12;
+								break;
+							case 'f':
+								decimalsElement.value = 15;
+								break;
+							case 'a':
+								decimalsElement.value = 18;
+								break;
+							case 'a':
+								decimalsElement.value = 18;
+								break;
+							case 'z':
+								decimalsElement.value = 21;
+								break;
+							case 'y':
+								decimalsElement.value = 24;
+								break;
+							case 'r':
+								decimalsElement.value = 27;
+								break;
+							case 'q':
+								decimalsElement.value = 30;
+								break;
+							default:
+								decimalsElement.value = 0;
+								break;
+						}
+						symbolElement.value = denom.substring(1).toUpperCase();
+						window.changeSymbol();
+						document.querySelector('#app').innerHTML = `
+							<div id="messagebox" class="messageBox">
+								<b>Native Token</b><br />
+								Symbol: ${symbolElement.value}<br />
+								Decimals: ${decimalsElement.value}
+							</div>
+						`;
+						setTimeout(() => fadeoutDiv('messagebox'), 2000);
+						return;
+					}
+				}
+			} break;
+
+			// check for evm
+			case 'evm': {
+				const res = await fetch(rpc, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({
+						jsonrpc: '2.0',
+						method: 'eth_chainId',
+						params: [],
+						id: 0,
+					}),
+				});
+				if (res.ok) {
+					const data = await res.json();
+					console.debug(data);
+					if (typeof data?.result === 'string') {
+						try {
+							const chain = parseInt(data.result, 16);
+							if (chain in evm_chains) {
+								const item = evm_chains[chain];
+								symbolElement.value = item.nativeCurrency.symbol;
+								decimalsElement.value = item.nativeCurrency.decimals;
+								window.changeSymbol();
+								document.querySelector('#app').innerHTML = `
+									<div id="messagebox" class="messageBox">
+										<b>Native Token</b><br />
+										Symbol: ${symbolElement.value}<br />
+										Decimals: ${decimalsElement.value}
+									</div>
+								`;
+								setTimeout(() => fadeoutDiv('messagebox'), 2000);
+								return;
+							}
+						}
+						catch (e) {
+							console.error(e);
+						}
+					}
+				}
+			} break;
+
+			default: {
+				document.querySelector('#app').innerHTML = `
+					<div id="messagebox" class="errorBox">
+						API type is not valid.
+					</div>
+				`;
+				setTimeout(() => fadeoutDiv('messagebox'), 2000);
+				return;
+			} break;
+		}
+	}
+	//cw20 or erc20 token
+	else {
+		switch (nettype) {
+			// cosmos token
+			case 'cosmos': {
+				const res = await fetch(`${rpc}/cosmwasm/wasm/v1/contract/${token}/smart/eyJ0b2tlbl9pbmZvIjp7fX0%3D`);
+				if (res.ok) {
+					const data = await res.json();
+					console.debug(data);
+					if (typeof data?.data?.symbol === 'string') {
+						symbolElement.value = data.data.symbol;
+						decimalsElement.value = data.data.decimals;
+						window.changeSymbol();
+						document.querySelector('#app').innerHTML = `
+							<div id="messagebox" class="messageBox">
+								<b>CW20 Token</b><br />
+								Symbol: ${symbolElement.value}<br />
+								Decimals: ${decimalsElement.value}
+							</div>
+						`;
+						setTimeout(() => fadeoutDiv('messagebox'), 2000);
+						return;
+					}
+				}
+			} break;
+
+			// evm token
+			case 'evm': {
+				const res = await fetch(rpc, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({
+						jsonrpc: '2.0',
+						method: 'eth_call',
+						params: [
+							{	// symbol()
+								data: '0x95d89b410000000000000000000000000000000000000000000000000000000000000000',
+								to: token,
+							},
+							'latest'
+						],
+						id: 0,
+					}),
+				});
+				if (res.ok) {
+					const data = await res.json();
+					// console.debug(data);
+					if (typeof data?.result === 'string') {
+						console.debug(evmDataToParams(['string'], evmBufferFromHex(data.result)));
+						symbolElement.value = evmDataToParams(['string'], evmBufferFromHex(data.result))[0];
+						const res = await fetch(rpc, {
+							method: 'POST',
+							headers: {
+								'Content-Type': 'application/json',
+							},
+							body: JSON.stringify({
+								jsonrpc: '2.0',
+								method: 'eth_call',
+								params: [
+									{	// decimals()
+										data: '0x313ce5670000000000000000000000000000000000000000000000000000000000000000',
+										to: token,
+									},
+									'latest'
+								],
+								id: 0,
+							}),
+						});
+						if (res.ok) {
+							const data = await res.json();
+							console.debug(data);
+							if (typeof data?.result === 'string') {
+								decimalsElement.value = evmDataToParams(['number'], evmBufferFromHex(data.result))[0];
+								window.changeSymbol();
+								document.querySelector('#app').innerHTML = `
+									<div id="messagebox" class="messageBox">
+										<b>ERC20 Token</b><br />
+										Symbol: ${symbolElement.value}<br />
+										Decimals: ${decimalsElement.value}
+									</div>
+								`;
+								setTimeout(() => fadeoutDiv('messagebox'), 2000);
+								return;
+							}
+						}
+					}
+				}
+			} break;
+
+			default: {
+				document.querySelector('#app').innerHTML = `
+					<div id="messagebox" class="errorBox">
+						API type is not valid.
+					</div>
+				`;
+				setTimeout(() => fadeoutDiv('messagebox'), 2000);
+				return;
+			} break;
+		}
+	}
+	document.querySelector('#app').innerHTML = `
+		<div id="messagebox" class="errorBox">
+			Calling API is failed.
+		</div>
+	`;
+	setTimeout(() => fadeoutDiv('messagebox'), 2000);
+}
+
+
+window.getBalance = async () => {
+	if (nettype !== 'cosmos' && nettype !== 'evm') {
+		document.querySelector('#app').innerHTML = `
+			<div id="messagebox" class="errorBox">
+				API type is unknown.<br />
+				Please, 'Check' API URL first.
+			</div>
+		`;
+		setTimeout(() => fadeoutDiv('messagebox'), 2000);
+		return;
+	}
+	let rpc = rpcElement.value;
+
+	const token = tokenElement.value;
+	const address = addrElement.value;
+	const denom = uintUnitElement.innerText;
+
+	// native token
+	if (typeof token !== 'string' || token.length < 1) {
+		switch (nettype) {
+			// check for cosmos
+			case 'cosmos': {
+				const res = await fetch(`${rpc}/cosmos/bank/v1beta1/balances/${address}/by_denom?denom=${denom}`);
+				if (res.ok) {
+					const data = await res.json();
+					console.debug(data);
+					if (typeof data?.balance?.amount === 'string') {
+						uintElement.value = (new Decimal(data.balance.amount)).toDecimalPlaces(0).toFixed();
+						window.changeUint();
+						document.querySelector('#app').innerHTML = `
+							<div id="messagebox" class="messageBox">
+								balance: ${uintElement.value}
+							</div>
+						`;
+						setTimeout(() => fadeoutDiv('messagebox'), 500);
+						return;
+					}
+				}
+			} break;
+
+			// check for evm
+			case 'evm': {
+				const res = await fetch(rpc, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({
+						jsonrpc: '2.0',
+						method: 'eth_getBalance',
+						params: [
+							address.startsWith('0x') ? address : '0x' + address,
+							'latest',
+						],
+						id: 0,
+					}),
+				});
+				if (res.ok) {
+					const data = await res.json();
+					console.debug(data);
+					if (typeof data?.result === 'string') {
+						uintElement.value = evmDataToParams(['bignumber'], evmBufferFromHex(data.result))[0].toFixed();
+						window.changeUint();
+						document.querySelector('#app').innerHTML = `
+							<div id="messagebox" class="messageBox">
+								balance: ${uintElement.value}
+							</div>
+						`;
+						setTimeout(() => fadeoutDiv('messagebox'), 500);
+						return;
+					}
+				}
+			} break;
+
+			default: {
+				document.querySelector('#app').innerHTML = `
+					<div id="messagebox" class="errorBox">
+						API type is not valid.
+					</div>
+				`;
+				setTimeout(() => fadeoutDiv('messagebox'), 2000);
+				return;
+			} break;
+		}
+	}
+	//cw20 or erc20 token
+	else {
+		switch (nettype) {
+			// cosmos token
+			case 'cosmos': {
+				const query = Buffer.from(`{"balance":{"address":"${address}"}}`).toString('base64');
+				const res = await fetch(`${rpc}/cosmwasm/wasm/v1/contract/${token}/smart/${encodeURIComponent(query)}`);
+				if (res.ok) {
+					const data = await res.json();
+					console.debug(data);
+					if (typeof data?.data?.balance === 'string') {
+						uintElement.value = (new Decimal(data.data.balance)).toDecimalPlaces(0).toFixed();
+						window.changeUint();
+						document.querySelector('#app').innerHTML = `
+							<div id="messagebox" class="messageBox">
+								balance: ${uintElement.value}
+							</div>
+						`;
+						setTimeout(() => fadeoutDiv('messagebox'), 500);
+						return;
+					}
+				}
+			} break;
+
+			// evm token
+			case 'evm': {
+				const res = await fetch(rpc, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({
+						jsonrpc: '2.0',
+						method: 'eth_call',
+						params: [
+							{	// balanceOf(address)
+								data: '0x70a08231000000000000000000000000' + (address.startsWith('0x') ? address.substring(2) : address),
+								to: token,
+							},
+							'latest'
+						],
+						id: 0,
+					}),
+				});
+				if (res.ok) {
+					const data = await res.json();
+					console.debug(data);
+					if (typeof data?.result === 'string') {
+						uintElement.value = evmDataToParams(['bignumber'], evmBufferFromHex(data.result))[0].toFixed();
+						window.changeUint();
+						document.querySelector('#app').innerHTML = `
+							<div id="messagebox" class="messageBox">
+								balance: ${uintElement.value}
+							</div>
+						`;
+						setTimeout(() => fadeoutDiv('messagebox'), 500);
+						return;
+					}
+				}
+			} break;
+
+			default: {
+				document.querySelector('#app').innerHTML = `
+					<div id="messagebox" class="errorBox">
+						API type is not valid.
+					</div>
+				`;
+				setTimeout(() => fadeoutDiv('messagebox'), 2000);
+				return;
+			} break;
+		}
+	}
+	document.querySelector('#app').innerHTML = `
+		<div id="messagebox" class="errorBox">
+			Calling API is failed.
+		</div>
+	`;
+	setTimeout(() => fadeoutDiv('messagebox'), 2000);
 }
