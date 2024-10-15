@@ -12,7 +12,7 @@ packages/*.tar.*
 packages/*.?z
 packages/*.t?z
 packages/*.t?z?
-**/usr/local/bin/*.*
+**/usr/local/bin/*
 
 # macos
 .DS_Store
