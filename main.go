@@ -24,8 +24,8 @@ func main() {
 		Width:  720,
 		Height: APP_OPTION_HEIGHT,
 		Linux: &linux.Options{
-			WindowIsTranslucent: true,
-			ProgramName:         "coinunits",
+			WindowIsTranslucent: false,
+			ProgramName:         "coin-units",
 		},
 		Mac: &mac.Options{
 			TitleBar: &mac.TitleBar{
