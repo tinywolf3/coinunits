@@ -30,3 +30,27 @@ from Wails Vanilla template.
 https://wails.io/ko/
 
 To build a redistributable, production mode package, use `wails build`.
+
+## Packaging
+
+### ubuntu amd64
+
+```bash
+wails build
+cd packages
+mkdir -p coinunits.ubuntu-amd64/usr/local/bin/
+cp ../build/bin/coinunits ./coinunits.ubuntu-amd64/usr/local/bin/
+dpkg-deb -b coinunits.ubuntu-amd64
+```
+
+for install
+
+```bash
+sudo apt install ./coinunits.ubuntu-amd64.deb
+```
+
+uninstall
+
+```bash
+sudo apt remove coinunits   
+```
