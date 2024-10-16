@@ -25,11 +25,13 @@
     margin: 0 0 0 20px;
     padding: 0 8px;
     cursor: pointer;
+    background-image: linear-gradient(to top, #74a3b0 0%, #709CA8 100%);
+    color: darkblue;
 }
 
 .btn:hover {
     background-image: linear-gradient(to top, #cfd9df 0%, #e2ebf0 100%);
-    color: #333333;
+    color: black;
 }
 
 .input {
@@ -51,4 +53,9 @@
 .input-box .input:focus {
     border: none;
     background-color: rgba(255, 255, 255, 1);
+}
+
+.fill {
+    display: flex;
+    width: 98%;
 }

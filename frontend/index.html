@@ -9,8 +9,15 @@
 	<div id="app"></div>
 	<h2>코인 단위 변환기</h2>
 	<table>
+		<colgroup>
+			<col style="width:0;">
+			<col style="width:0;">
+			<col>
+			<col style="width:0;">
+			<col style="width:0;">
+		</colgroup>
 		<tr>
-			<td>코인 심볼</td>
+			<th>코인 심볼</th>
 			<td>:</td>
 			<td>
 				<input class="input" id="symbol"
@@ -19,7 +26,7 @@
 			</td>
 		</tr>
 		<tr>
-			<td>소수 자릿수</td>
+			<th>소수 자릿수</th>
 			<td>:</td>
 			<td>
 				<input class="input" id="decimals"
@@ -31,36 +38,40 @@
 			</td>
 		</tr>
 		<tr>
-			<td>Real Amount</td>
+			<th>Real Amount</th>
 			<td>:</td>
 			<td>
-				<input class="number" id="amount" type="text" size="40"
+				<input class="number fill" id="amount" type="text"
 					onclick="this.select()" oninput="inputAmount()" onchange="changeAmount()" />
-				<span id="unit_amount">XPLA</span> &nbsp;&nbsp;
+			</td>
+			<td>
+				<span id="unit_amount">XPLA</span>
 			</td>
 			<td>
 				<button class="btn" onclick="copyAmount()">copy</button>
 			</td>
 		</tr>
 		<tr>
-			<td>Uint Amount</td>
+			<th>Uint Amount</th>
 			<td>:</td>
 			<td>
-				<input class="number" id="uint" type="text" size="40"
+				<input class="number fill" id="uint" type="text"
 					onclick="this.select()" oninput="inputUint()" onchange="changeUint()" />
+			</td>
+			<td>
 				<span id="unit_uint">axpla</span>
 			</td>
 			<td>
 				<button class="btn" onclick="copyUint()">copy</button>
 			</td>
 		</tr>
-		<tr><td colspan="4"><hr/></td></tr>
+		<tr><td colspan="5"><hr/></td></tr>
 		<tr>
-			<td>Chain API URL</td>
+			<th>Chain API URL</th>
 			<td>:</td>
-			<td>
-				<input class="input" id="rpc"
-					type="text" autocomplete="on" value="https://dimension-lcd.xpla.dev/" placeholder="Cosmos LCD or EVM RPC URL" size="44"
+			<td colspan="2">
+				<input class="input fill" id="rpc"
+					type="text" autocomplete="on" value="" placeholder="Cosmos LCD or EVM RPC URL" size="44"
 					onclick="this.select()" onchange="resetRPC()" />
 			</td>
 			<td>
@@ -68,10 +79,10 @@
 			</td>
 		</tr>
 		<tr>
-			<td>Token Address</td>
+			<th>Token Address</th>
 			<td>:</td>
-			<td>
-				<input class="input" id="token"
+			<td colspan="2">
+				<input class="input fill" id="token"
 					type="text" autocomplete="on" value="" placeholder="Native Token" size="44"
 					onclick="this.select()" />
 			</td>
@@ -80,10 +91,10 @@
 			</td>
 		</tr>
 		<tr>
-			<td>Account Address</td>
+			<th>Account Address</th>
 			<td>:</td>
-			<td>
-				<input class="input" id="address"
+			<td colspan="2">
+				<input class="input fill" id="address"
 					type="text" autocomplete="on" value="" size="44"
 					onclick="this.select()" />
 			</td>
