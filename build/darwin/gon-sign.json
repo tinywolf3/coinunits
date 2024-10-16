@@ -1,0 +1,12 @@
+{
+  "source": ["./build/bin/coinunits.app"],
+  "bundle_id": "it.baram.tools.coinunits",
+  "apple_id": {
+    "username": "dev@baram.it",
+    "password": "@env:niXo-97",
+    "provider": "4367UNXVW4"
+  },
+  "sign": {
+    "application_identity": "Apple Development: SeungDae Jeong (N44M2C67NA)"
+  }
+}

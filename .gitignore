@@ -6,6 +6,8 @@ frontend/dist
 # packaging
 packages/*.deb
 packages/*.app
+packages/**/*.app
+packages/*.dmg
 packages/*.exe
 packages/*.zip
 packages/*.tar.*
