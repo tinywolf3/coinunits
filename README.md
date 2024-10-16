@@ -54,3 +54,16 @@ uninstall
 ```bash
 sudo apt remove coinunits   
 ```
+
+### macos m1
+
+```bash
+wails build
+gon -log-level=info ./build/darwin/gon-sign.json
+cd packages
+cp ../build/bin/coinunits.app ./coinunits.macos/코인\ 단위\ 변환기.app
+```
+
+./packages/coinunits.macos 폴더를 맥의 디스크 유틸리티를 사용해서 dmg로 패키징 해주면 됨.
+
+이 작업 이후에 'wails dev'는 코드 서명 문제로 작동하지 않을 수 있음.
