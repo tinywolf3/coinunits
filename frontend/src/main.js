@@ -123,8 +123,37 @@ function evmDataToParams(types /*string[]*/, data /*Buffer*/) /*any[]*/ {
 }
 
 
+function checkPlatform() {
+	const userAgent = window.navigator.userAgent,
+		platform = window.navigator?.userAgentData?.platform || window.navigator.platform,
+		macosPlatforms = ['macOS', 'Macintosh', 'MacIntel', 'MacPPC', 'Mac68K'],
+		windowsPlatforms = ['Win32', 'Win64', 'Windows', 'WinCE'],
+		iosPlatforms = ['iPhone', 'iPad', 'iPod'];
+	let os = null;
+
+	if (macosPlatforms.indexOf(platform) !== -1) {
+		os = 'Mac OS';
+	} else if (iosPlatforms.indexOf(platform) !== -1) {
+		os = 'iOS';
+	} else if (windowsPlatforms.indexOf(platform) !== -1) {
+		os = 'Windows';
+	} else if (/Android/.test(userAgent)) {
+		os = 'Android';
+	} else if (/Linux/.test(platform)) {
+		os = 'Linux';
+	}
+
+	return os;
+}
 
 window.onload = async () => {
+	const os = checkPlatform();
+	if (os === 'Linux') {
+		// 리눅스는 뒷배경이 투명하지 않으므로 배경색 정의
+		const html = document.querySelector("html");
+		html.classList.add("default_background");
+	}
+
 	const json = await app.LoadConf();
 	runtime.LogDebug(json);
 	const conf = JSON.parse(json);

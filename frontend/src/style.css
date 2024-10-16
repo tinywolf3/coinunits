@@ -3,14 +3,18 @@ html {
 }
 @media (prefers-color-scheme: dark) {
 	html {
-		/* background-color: rgb(27, 38, 54); */
 		color: white;
+	}
+	.default_background {
+		background-color: rgb(27, 38, 54);
 	}
 }
 @media (prefers-color-scheme: light) {
 	html {
-		/* background-color: rgb(228, 217, 201); */
 		color: black;
+	}
+	.default_background {
+		background-color: rgb(228, 217, 201);
 	}
 }
 
