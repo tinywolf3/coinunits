@@ -23,6 +23,7 @@ const uintUnitElement = document.getElementById("unit_uint");
 const rpcElement = document.getElementById("rpc");
 const tokenElement = document.getElementById("token");
 const addrElement = document.getElementById("address");
+const netElement = document.getElementById("network");
 let nettype = null;
 let evm_chains = {};
 amountElement.focus();
@@ -177,8 +178,9 @@ window.onload = async () => {
 	}
 	window.changeSymbol();
 
-	const res = await fetch('https://chainid.network/chains_mini.json');
-	if (res.ok) {
+	const res = await fetch('https://chainid.network/chains_mini.json')
+		.catch((e) => { console.debug(e); return null; });
+	if (res?.ok) {
 		const data = await res.json();
 		// console.debug(data);
 		if (Array.isArray(data)) {
@@ -391,7 +393,26 @@ window.copyUint = () => {
 }
 
 window.resetRPC = () => {
+	netElement.innerText = '';
 	nettype = null;
+}
+
+window.changeRPC = (network) => {
+	window.resetRPC();
+	switch (network) {
+		case 'XPLA': {
+			rpcElement.value = 'https://dimension-lcd.xpla.dev';
+		} break;
+		case 'ATOM': {
+			rpcElement.value = 'https://cosmos-rest.publicnode.com';
+		} break;
+		case 'ETH': {
+			rpcElement.value = 'https://ethereum-rpc.publicnode.com';
+		} break;
+		case 'BNB': {
+			rpcElement.value = 'https://bsc-dataseed2.binance.org/';
+		} break;
+	}
 }
 
 window.checkRPC = async () => {
@@ -410,26 +431,8 @@ window.checkRPC = async () => {
 		rpcElement.value = rpc;
 	}
 
-	// check for cosmos status
-	let res = await fetch(`${rpc}/cosmos/base/tendermint/v1beta1/node_info`);
-	if (res.ok) {
-		const data = await res.json();
-		console.debug(data);
-		if (typeof data?.default_node_info?.network === 'string') {
-			document.querySelector('#app').innerHTML = `
-				<div id="messagebox" class="messageBox">
-					Cosmos LCD<br />
-					chain-id: ${data.default_node_info.network}
-				</div>
-			`;
-			setTimeout(() => fadeoutDiv('messagebox'), 2000);
-			nettype = 'cosmos';
-			return;
-		}
-	}
-
 	// check for evm
-	res = await fetch(rpc, {
+	let res = await fetch(rpc, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
@@ -440,8 +443,8 @@ window.checkRPC = async () => {
 			params: [],
 			id: 0,
 		}),
-	});
-	if (res.ok) {
+	}).catch((e) => { console.debug(e); return null; });
+	if (res?.ok) {
 		const data = await res.json();
 		console.debug(data);
 		if (typeof data?.result === 'string') {
@@ -456,6 +459,7 @@ window.checkRPC = async () => {
 						</div>
 					`;
 					setTimeout(() => fadeoutDiv('messagebox'), 2000);
+					netElement.innerText = `[${chain}] ${item.name}`;
 					nettype = 'evm';
 					return;
 				}
@@ -466,6 +470,33 @@ window.checkRPC = async () => {
 		}
 	}
 
+	// check for cosmos status
+	res = await fetch(`${rpc}/cosmos/base/tendermint/v1beta1/node_info`)
+		.catch((e) => { console.debug(e); return null; });
+	if (res?.ok) {
+		const data = await res.json();
+		console.debug(data);
+		if (typeof data?.default_node_info?.network === 'string') {
+			document.querySelector('#app').innerHTML = `
+				<div id="messagebox" class="messageBox">
+					Cosmos LCD<br />
+					chain-id: ${data.default_node_info.network}
+				</div>
+			`;
+			setTimeout(() => fadeoutDiv('messagebox'), 2000);
+			netElement.innerText = data.default_node_info.network;
+			nettype = 'cosmos';
+			return;
+		}
+	}
+
+	document.querySelector('#app').innerHTML = `
+		<div id="messagebox" class="errorBox">
+			Calling API failed.
+		</div>
+	`;
+	setTimeout(() => fadeoutDiv('messagebox'), 700);
+	netElement.innerText = '';
 	nettype = null;
 }
 
@@ -489,8 +520,9 @@ window.applyToken = async () => {
 		switch (nettype) {
 			// check for cosmos
 			case 'cosmos': {
-				const res = await fetch(`${rpc}/cosmos/staking/v1beta1/params`);
-				if (res.ok) {
+				const res = await fetch(`${rpc}/cosmos/staking/v1beta1/params`)
+					.catch((e) => { console.debug(e); return null; });
+				if (res?.ok) {
 					const data = await res.json();
 					console.debug(data);
 					if (typeof data?.params?.bond_denom === 'string') {
@@ -567,8 +599,8 @@ window.applyToken = async () => {
 						params: [],
 						id: 0,
 					}),
-				});
-				if (res.ok) {
+				}).catch((e) => { console.debug(e); return null; });
+				if (res?.ok) {
 					const data = await res.json();
 					console.debug(data);
 					if (typeof data?.result === 'string') {
@@ -613,8 +645,9 @@ window.applyToken = async () => {
 		switch (nettype) {
 			// cosmos token
 			case 'cosmos': {
-				const res = await fetch(`${rpc}/cosmwasm/wasm/v1/contract/${token}/smart/eyJ0b2tlbl9pbmZvIjp7fX0%3D`);
-				if (res.ok) {
+				const res = await fetch(`${rpc}/cosmwasm/wasm/v1/contract/${token}/smart/eyJ0b2tlbl9pbmZvIjp7fX0%3D`)
+					.catch((e) => { console.debug(e); return null; });
+				if (res?.ok) {
 					const data = await res.json();
 					console.debug(data);
 					if (typeof data?.data?.symbol === 'string') {
@@ -653,8 +686,8 @@ window.applyToken = async () => {
 						],
 						id: 0,
 					}),
-				});
-				if (res.ok) {
+				}).catch((e) => { console.debug(e); return null; });
+				if (res?.ok) {
 					const data = await res.json();
 					// console.debug(data);
 					if (typeof data?.result === 'string') {
@@ -677,8 +710,8 @@ window.applyToken = async () => {
 								],
 								id: 0,
 							}),
-						});
-						if (res.ok) {
+						}).catch((e) => { console.debug(e); return null; });
+						if (res?.ok) {
 							const data = await res.json();
 							console.debug(data);
 							if (typeof data?.result === 'string') {
@@ -741,8 +774,9 @@ window.getBalance = async () => {
 		switch (nettype) {
 			// check for cosmos
 			case 'cosmos': {
-				const res = await fetch(`${rpc}/cosmos/bank/v1beta1/balances/${address}/by_denom?denom=${denom}`);
-				if (res.ok) {
+				const res = await fetch(`${rpc}/cosmos/bank/v1beta1/balances/${address}/by_denom?denom=${denom}`)
+					.catch((e) => { console.debug(e); return null; });
+				if (res?.ok) {
 					const data = await res.json();
 					console.debug(data);
 					if (typeof data?.balance?.amount === 'string') {
@@ -775,8 +809,8 @@ window.getBalance = async () => {
 						],
 						id: 0,
 					}),
-				});
-				if (res.ok) {
+				}).catch((e) => { console.debug(e); return null; });
+				if (res?.ok) {
 					const data = await res.json();
 					console.debug(data);
 					if (typeof data?.result === 'string') {
@@ -810,8 +844,9 @@ window.getBalance = async () => {
 			// cosmos token
 			case 'cosmos': {
 				const query = Buffer.from(`{"balance":{"address":"${address}"}}`).toString('base64');
-				const res = await fetch(`${rpc}/cosmwasm/wasm/v1/contract/${token}/smart/${encodeURIComponent(query)}`);
-				if (res.ok) {
+				const res = await fetch(`${rpc}/cosmwasm/wasm/v1/contract/${token}/smart/${encodeURIComponent(query)}`)
+					.catch((e) => { console.debug(e); return null; });
+				if (res?.ok) {
 					const data = await res.json();
 					console.debug(data);
 					if (typeof data?.data?.balance === 'string') {
@@ -847,8 +882,8 @@ window.getBalance = async () => {
 						],
 						id: 0,
 					}),
-				});
-				if (res.ok) {
+				}).catch((e) => { console.debug(e); return null; });
+				if (res?.ok) {
 					const data = await res.json();
 					console.debug(data);
 					if (typeof data?.result === 'string') {

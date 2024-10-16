@@ -70,6 +70,13 @@
 			<th>Chain API URL</th>
 			<td>:</td>
 			<td colspan="2">
+				<button class="btn option" onclick="changeRPC('XPLA')">XPLA</button>
+				<button class="btn option" onclick="changeRPC('ATOM')">ATOM</button>
+				<button class="btn option" onclick="changeRPC('ETH')">ETH</button>
+				<button class="btn option" onclick="changeRPC('BNB')">BNB</button>
+				&nbsp;
+				<span id="network" style="max-width: 140px; display: inline-block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;"></span>
+				&nbsp; <br/>
 				<input class="input fill" id="rpc"
 					type="text" autocomplete="on" value="" placeholder="Cosmos LCD or EVM RPC URL" size="44"
 					onclick="this.select()" onchange="resetRPC()" />
