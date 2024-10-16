@@ -27,14 +27,15 @@
 	cursor: pointer;
 	background-image: linear-gradient(to top, #74a3b0 0%, #709CA8 100%);
 	color: darkblue;
+	font-size: 1em;
 }
 
 .option {
 	width: auto;
 	height: auto;
-	line-height: auto;
+	line-height: 1.2em;
 	margin: 4px;
-	padding: 0 8px;
+	padding: 4px 8px;
 }
 
 .btn:hover {
