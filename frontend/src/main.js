@@ -431,6 +431,13 @@ window.checkRPC = async () => {
 		rpcElement.value = rpc;
 	}
 
+	document.querySelector('#app').innerHTML = `
+		<div id="messagebox" class="processBox">
+			calling...<br/>
+			<div class="loader001"></div>
+		</div>
+	`;
+
 	// check for evm
 	let res = await fetch(rpc, {
 		method: 'POST',
@@ -514,6 +521,13 @@ window.applyToken = async () => {
 	let rpc = rpcElement.value;
 
 	const token = tokenElement.value;
+
+	document.querySelector('#app').innerHTML = `
+		<div id="messagebox" class="processBox">
+			calling...<br/>
+			<div class="loader001"></div>
+		</div>
+	`;
 
 	// native token
 	if (typeof token !== 'string' || token.length < 1) {
@@ -768,6 +782,13 @@ window.getBalance = async () => {
 	const token = tokenElement.value;
 	const address = addrElement.value;
 	const denom = uintUnitElement.innerText;
+
+	document.querySelector('#app').innerHTML = `
+		<div id="messagebox" class="processBox">
+			calling...<br/>
+			<span class="loader001"></span>
+		</div>
+	`;
 
 	// native token
 	if (typeof token !== 'string' || token.length < 1) {
